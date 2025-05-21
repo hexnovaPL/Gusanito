@@ -1,0 +1,130 @@
+import pygame
+import sys
+import random
+
+# Inicializar Pygame
+pygame.init()
+
+# Constantes
+ANCHO = 640
+ALTO = 480
+TAM_CUADRO = 20
+FPS = 10
+
+# Colores
+NEGRO = (0, 0, 0)
+ROSA = (255, 105, 180)
+AZUL = (0, 0, 255)
+BLANCO = (255, 255, 255)
+
+# Pantalla
+pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Juego del Gusanito")
+fuente = pygame.font.SysFont("Arial", 28)
+
+# Función para mostrar texto
+def mostrar_texto(texto, x, y, color=BLANCO, centrado=False):
+    render = fuente.render(texto, True, color)
+    rect = render.get_rect()
+    if centrado:
+        rect.center = (x, y)
+    else:
+        rect.topleft = (x, y)
+    pantalla.blit(render, rect)
+
+# Función para generar manzanas alineadas a la cuadrícula
+def generar_manzana():
+    x = random.randint(0, (ANCHO - TAM_CUADRO) // TAM_CUADRO) * TAM_CUADRO
+    y = random.randint(0, (ALTO - TAM_CUADRO) // TAM_CUADRO) * TAM_CUADRO
+    return [x, y]
+
+# Función para mostrar la pantalla de Game Over
+def game_over(puntaje):
+    while True:
+        pantalla.fill(NEGRO)
+        mostrar_texto("¡Juego Terminado!", ANCHO // 2, ALTO // 3, BLANCO, True)
+        mostrar_texto(f"Puntaje: {puntaje}", ANCHO // 2, ALTO // 2.5, BLANCO, True)
+        mostrar_texto("Presiona R para reintentar o Q para salir", ANCHO // 2, ALTO // 2, BLANCO, True)
+        pygame.display.flip()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_r:
+                    return  # Reiniciar
+                elif evento.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
+
+# Función principal del juego
+def main():
+    reloj = pygame.time.Clock()
+    serpiente = [[100, 50], [80, 50], [60, 50]]
+    direccion = "DERECHA"
+    cambiar_a = direccion
+    puntaje = 0
+
+    manzana = generar_manzana()
+
+    while True:
+        # Manejo de eventos
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_UP and direccion != "ABAJO":
+                    cambiar_a = "ARRIBA"
+                elif evento.key == pygame.K_DOWN and direccion != "ARRIBA":
+                    cambiar_a = "ABAJO"
+                elif evento.key == pygame.K_LEFT and direccion != "DERECHA":
+                    cambiar_a = "IZQUIERDA"
+                elif evento.key == pygame.K_RIGHT and direccion != "IZQUIERDA":
+                    cambiar_a = "DERECHA"
+
+        direccion = cambiar_a
+
+        # Mover la cabeza de la serpiente
+        cabeza = list(serpiente[0])
+        if direccion == "ARRIBA":
+            cabeza[1] -= TAM_CUADRO
+        elif direccion == "ABAJO":
+            cabeza[1] += TAM_CUADRO
+        elif direccion == "IZQUIERDA":
+            cabeza[0] -= TAM_CUADRO
+        elif direccion == "DERECHA":
+            cabeza[0] += TAM_CUADRO
+        serpiente.insert(0, cabeza)
+
+        # Verificar colisión con la manzana
+        if cabeza == manzana:
+            puntaje += 1
+            manzana = generar_manzana()
+        else:
+            serpiente.pop()
+
+        # Colisiones con paredes o consigo mismo
+        if (
+            cabeza[0] < 0 or cabeza[0] >= ANCHO or
+            cabeza[1] < 0 or cabeza[1] >= ALTO or
+            cabeza in serpiente[1:]
+        ):
+            game_over(puntaje)
+            return  # Reiniciar
+
+        # Dibujar todo
+        pantalla.fill(NEGRO)
+        for bloque in serpiente:
+            pygame.draw.rect(pantalla, ROSA, pygame.Rect(bloque[0], bloque[1], TAM_CUADRO, TAM_CUADRO))
+        pygame.draw.rect(pantalla, AZUL, pygame.Rect(manzana[0], manzana[1], TAM_CUADRO, TAM_CUADRO))
+
+        mostrar_texto(f"Puntaje: {puntaje}", 10, 10)
+        pygame.display.flip()
+        reloj.tick(FPS)
+
+# Iniciar el juego
+if __name__ == "__main__":
+    while True:
+        main()
